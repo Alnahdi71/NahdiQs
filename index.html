@@ -6,22 +6,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Tajawal', sans-serif; margin:0; padding:0; background:#121212; color:#e0e0e0; }
-    header { text-align:center; padding:2rem; background:#1f1f1f; color:#fff; }
-    header img { width:120px; height:120px; border-radius:50%; border:3px solid #bb86fc; margin-bottom:10px; }
-    nav { background:#1b1b1b; padding:10px; text-align:center; }
-    nav a, nav button { color:#bb86fc; margin:0 10px; text-decoration:none; font-weight:bold; background:transparent; border:none; cursor:pointer; font-size:1rem; }
-    nav a:hover, nav button:hover { color:#fff; }
-    section { max-width:900px; margin:auto; padding:20px; }
-    .card { background:#1f1f1f; border-radius:12px; padding:20px; margin:15px 0; box-shadow:0 4px 10px rgba(0,0,0,0.5); }
-    footer { text-align:center; padding:15px; background:#1b1b1b; color:#bb86fc; }
-    textarea { width:100%; height:100px; padding:10px; border-radius:8px; border:1px solid #444; font-size:14px; resize:vertical; background:#2c2c2c; color:#e0e0e0; }
-    button { margin-top:10px; padding:8px 16px; border-radius:6px; border:none; background:#bb86fc; color:#121212; cursor:pointer; font-weight:bold; }
-    .note-item { border-bottom:1px solid #444; padding:5px 0; display:flex; justify-content:space-between; align-items:center; }
-    .note-text { flex:1; }
-    .note-actions button { margin-left:5px; background:#333; color:#bb86fc; padding:4px 8px; border-radius:4px; }
-    .note-actions button:hover { background:#bb86fc; color:#121212; }
-    a { color:#bb86fc; } a:hover { color:#fff; }
+    body {
+      font-family: 'Tajawal', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #121212;
+      color: #e0e0e0;
+    }
+    header { text-align: center; padding: 2rem; background: #1f1f1f; color: #fff; }
+    header img { width: 120px; height: 120px; border-radius: 50%; border: 3px solid #bb86fc; margin-bottom: 10px; }
+    nav { background: #1b1b1b; padding: 10px; text-align: center; }
+    nav a, nav button { color: #bb86fc; margin: 0 10px; text-decoration: none; font-weight: bold; background: transparent; border: none; cursor: pointer; font-size: 1rem; }
+    nav a:hover, nav button:hover { color: #fff; }
+    section { max-width: 900px; margin: auto; padding: 20px; }
+    .card { background: #1f1f1f; border-radius: 12px; padding: 20px; margin: 15px 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    footer { text-align: center; padding: 15px; background: #1b1b1b; color: #bb86fc; }
+    textarea { width: 100%; height: 100px; padding: 10px; border-radius: 8px; border: 1px solid #444; font-size: 14px; resize: vertical; background: #2c2c2c; color: #e0e0e0; }
+    button { margin-top: 10px; padding: 8px 16px; border-radius: 6px; border: none; background: #bb86fc; color: #121212; cursor: pointer; font-weight: bold; }
+    .note-item { border-bottom: 1px solid #444; padding: 5px 0; display: flex; justify-content: space-between; align-items: center; }
+    .note-text { flex: 1; }
+    .note-actions button { margin-left: 5px; background: #333; color: #bb86fc; padding: 4px 8px; border-radius: 4px; }
+    .note-actions button:hover { background: #bb86fc; color: #121212; }
+    a { color: #bb86fc; } a:hover { color: #fff; }
   </style>
 </head>
 <body>
@@ -64,7 +70,7 @@
     <div class="card">
       <h2 id="notes-title">ملاحظاتي اليومية</h2>
       <textarea id="new-note" placeholder="اكتب ملاحظتك هنا..."></textarea>
-      <button onclick="addNote()">إضافة الملاحظة</button>
+      <button id="add-note">➕ إضافة الملاحظة</button>
       <div id="notes-list"></div>
     </div>
   </section>
@@ -89,9 +95,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
+    // 🔑 مفاتيح Firebase الخاصة بك
     const firebaseConfig = {
       apiKey: "AIzaSyAL78VeM177-NY3K2RfjQ1P3sbZvggNmqQ",
       authDomain: "my-website-ca847.firebaseapp.com",
@@ -106,10 +113,15 @@
 
     const notesList = document.getElementById('notes-list');
     const newNoteInput = document.getElementById('new-note');
+    const addBtn = document.getElementById('add-note');
 
     async function loadNotes() {
       notesList.innerHTML = '';
       const snapshot = await getDocs(collection(db, "notes"));
+      if(snapshot.empty){
+        notesList.innerHTML = "<p>لا توجد ملاحظات بعد.</p>";
+        return;
+      }
       snapshot.forEach(docSnap => {
         const note = docSnap.data();
         const div = document.createElement('div');
@@ -125,7 +137,7 @@
       });
     }
 
-    window.addNote = async function() {
+    async function addNote() {
       const text = newNoteInput.value.trim();
       if(!text) return;
       await addDoc(collection(db, "notes"), { text: text, date: Date.now() });
@@ -134,7 +146,15 @@
     }
 
     window.deleteNote = async function(id){ await deleteDoc(doc(db, "notes", id)); loadNotes(); }
-    window.editNote = async function(id, oldText){ const updated = prompt("عدل الملاحظة:", oldText); if(updated !== null){ await updateDoc(doc(db, "notes", id), { text: updated }); loadNotes(); } }
+    window.editNote = async function(id, oldText){ 
+      const updated = prompt("✏️ عدل الملاحظة:", oldText); 
+      if(updated !== null && updated.trim() !== ""){ 
+        await updateDoc(doc(db, "notes", id), { text: updated }); 
+        loadNotes(); 
+      } 
+    }
+
+    addBtn.addEventListener('click', addNote);
     loadNotes();
 
     // PDF
@@ -153,8 +173,8 @@
     const langBtn = document.getElementById('toggle-language');
     let isArabic = true;
     const texts = {
-      ar: { name: "د. أنور بدر النهدي", title: "طبيب عام في عيادة مكافحة التدخين", about: "عنّي", aboutText: "أقوم بمساعدة المدخنين للإقلاع عن التدخين مع تقديم النصائح اللازمة.", skills: "مهاراتي", notes: "ملاحظاتي اليومية", contact: "تواصل معي", nav: ["من أنا", "مهاراتي", "ملاحظاتي", "تواصل"], pdf: "📄 تحميل PDF" },
-      en: { name: "Dr. Anwar Badr Alnahdi", title: "General Practitioner - Anti-Smoking Clinic", about: "About Me", aboutText: "I help smokers quit smoking by providing necessary advice and support.", skills: "My Skills", notes: "My Daily Notes", contact: "Contact Me", nav: ["About", "Skills", "Notes", "Contact"], pdf: "📄 Download PDF" }
+      ar: { name: "د. أنور بدر النهدي", title: "طبيب عام في عيادة مكافحة التدخين", about: "عنّي", aboutText: "أقوم بمساعدة المدخنين للإقلاع عن التدخين مع تقديم النصائح اللازمة.", skills: "مهاراتي", notes: "ملاحظاتي اليومية", contact: "تواصل معي", nav: ["من أنا", "مهاراتي", "ملاحظاتي", "تواصل"], pdf: "📄 تحميل PDF", langBtn: "🌐 English" },
+      en: { name: "Dr. Anwar Badr Alnahdi", title: "General Practitioner - Anti-Smoking Clinic", about: "About Me", aboutText: "I help smokers quit smoking by providing necessary advice and support.", skills: "My Skills", notes: "My Daily Notes", contact: "Contact Me", nav: ["About", "Skills", "Notes", "Contact"], pdf: "📄 Download PDF", langBtn: "🌐 العربية" }
     };
 
     langBtn.addEventListener('click', () => {
@@ -163,4 +183,18 @@
       document.getElementById('name').textContent = texts[lang].name;
       document.getElementById('title').textContent = texts[lang].title;
       document.getElementById('about-title').textContent = texts[lang].about;
-      document.getElementById('about-text').textContent = texts[lang].
+      document.getElementById('about-text').textContent = texts[lang].aboutText;
+      document.getElementById('skills-title').textContent = texts[lang].skills;
+      document.getElementById('notes-title').textContent = texts[lang].notes;
+      document.getElementById('contact-title').textContent = texts[lang].contact;
+      document.getElementById('nav-about').textContent = texts[lang].nav[0];
+      document.getElementById('nav-skills').textContent = texts[lang].nav[1];
+      document.getElementById('nav-notes').textContent = texts[lang].nav[2];
+      document.getElementById('nav-contact').textContent = texts[lang].nav[3];
+      document.getElementById('download-pdf').textContent = texts[lang].pdf;
+      langBtn.textContent = texts[lang].langBtn;
+      isArabic = !isArabic;
+    });
+  </script>
+</body>
+</html>
